@@ -1,7 +1,7 @@
 # Setup
-title: Iraide Hoyas Puente
+title: Iraide Hoyas
 description: Estudiante de Ingeniería en Tecnologías de la Telecomunicación
-url: https://vszhub.github.io
+url: 
 avatar: https://avatars.githubusercontent.com/u/152202161?v=4
 paginate: 5
 permalink: pretty
@@ -29,14 +29,13 @@ exclude:
 
 # Optimize Jekyl SEO Tag
 twitter:
-  username: vszhub
-  card: summary
-logo: logo.png
+  username:
+  card:
+logo: 
 social:
-  name: Songzi Vong
+  name: Iraide Hoyas
   links:
-    - https://twitter.com/vszhub
-    - https://github.com/vszhub
+    - https://github.com/iraidehp
 google_site_verification: xxxxx
 lang: en
 
