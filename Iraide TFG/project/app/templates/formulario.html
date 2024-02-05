@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar</title>
+</head>
+<body>
+    <h2>Formulario de inicio de sesión</h2>
+    <h5>Si ya está registrado ingrese aquí</h5>
+    {% if msg %}
+        <p style="color: red">{{ msg }}</p>
+    {% endif %}
+    <form method="POST" action="/">
+        {% csrf_token %}
+        Usuario<input type="text" name="user"><br>
+        Contraseña<input type="password" name="pwd"><br>
+        <button type="submit" name="boton" value="iniciar">Aceptar</button>
+    </form>
+    <h2>Formulario de registro</h2>
+    <h5>Si no estás registrado, ingrese aquí sus datos</h5>
+    <form method="POST" action="/">
+        {%  csrf_token %}
+        Usuario para inicio de sesión<input type="text" name="user" required><br>
+        Contraseña para inicio de sesión<input type="password" name="pwd" required><br><br>
+        Nombre<input type="text" name="nombre" required><br>
+        Edad<input type="number" name="edad" required><br>
+        País<input type="text" name="pais"required><br>
+        Sexo<br>
+        <input type="radio" name="sexo" value="M" required>Masculino
+        <input type="radio" name="sexo" value="F"required>Femenino<br><br>
+        Sitema operativo<br>
+        <input type="radio" name="so" value="Windows" required>Windows
+        <input type="radio" name="so" value="Linux" required>Linux
+        <input type="radio" name="so" value="Mac" required>Mac
+        <input type="radio" name="so" value="Otro" required>Otro<br><br>
+        Rol de acceso(puede elegir una o más de una)<br>
+        <input type="checkbox" name="rol[]" value="student">Estudiante
+        <input type="checkbox" name="rol[]" value="teacher">Profesor
+        <input type="checkbox" name="rol[]" value="admin">Administrador<br>
+        <button type="submit" name="boton" value="registrar">Aceptar</button>
+    </form>
+</body>
+</html>
