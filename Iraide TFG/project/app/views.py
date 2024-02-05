@@ -1,12 +1,71 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from plotly.offline import plot
-from .models import usuario
+from .models import usuario, clase
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
 import plotly.express as px
 import psycopg2
 
 # Create your views here.
+def todos_usuarios():
+    users = []
+    usuarios = usuario.objects.all()
+    for u in usuarios:
+        users.append(u.user)
+    return users
+
+def index(request):
+    if request.method == 'GET':
+        return render(request, 'formulario.html',{'msg':''})
+    elif request.method == "POST":
+        if request.POST['boton'] == 'iniciar':
+            users = todos_usuarios()
+            print(users)
+            user = request.POST['user']
+            pwd = request.POST['pwd']
+            if user in users:
+                u = usuario.objects.get(user=user)
+                print(u.pwd)
+                if u.pwd == pwd:
+                    return redirect('/dash')
+                else:
+                    msg = 'Contraseña incorrecta'
+                    context = {'msg': msg}
+                    return render(request, 'formulario.html', context)
+            else:
+                msg = 'Usuario no registrado, registrese'
+                context = {'msg': msg}
+                return render(request, 'formulario.html', context)
+        elif request.POST['boton'] == 'registrar':
+            users = todos_usuarios()
+            student = False
+            teacher = False
+            admin = False
+            user = request.POST['user']
+            if user in users:
+                msg = 'Nombre de usuario no disponible, escoja otro'
+                context = {'msg': msg}
+                return render(request, 'formulario.html', context)
+            pwd = request.POST['pwd']
+            nombre = request.POST['nombre']
+            edad = request.POST['edad']
+            pais = request.POST['pais']
+            sexo = request.POST['sexo']
+            so = request.POST['so']
+            rol = request.POST.getlist('rol[]')
+            if (len(rol)==0) or ('student' in rol):
+                student = True
+            if 'teacher' in rol:
+                teacher = True
+            if 'admin' in rol:
+                admin=True
+            user = usuario.objects.create(user=user,pwd=pwd,nombre=nombre,edad=edad,pais=pais,sexo=sexo,
+                                       so=so, is_student=student, is_teacher=teacher,is_admin=admin)
+            user.save()
+            return redirect('/dash')
+
+
+
 def datos_edad():
     edad = []
     cantidad =[]
@@ -63,7 +122,7 @@ def datos_pais():
         longitudes.append(localizacion.longitude)
     return latitudes, longitudes
 
-def index(request):
+def dash(request):
     #DASHBOARD DE LA EDADES
     dat, cantidad = datos_edad()
     fig = go.Scatter(x=dat, y=cantidad, mode='markers', line=dict(color='red'))
@@ -102,3 +161,4 @@ def index(request):
         'plot3': plot_div3
     }
     return render(request, 'prueba.html',context)
+
