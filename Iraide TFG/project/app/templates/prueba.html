@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>Dashboards</title>
     <h1>PROTOTIPO: Visualización de datos</h1>
+    <h4>Hola, {{ nombre }}</h4>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
+    {{ msg }}
     {% load plotly_dash %}
     {{ plot | safe }}
     {{ plot1 | safe }}

@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate, login
 from django.shortcuts import render,redirect
 from plotly.offline import plot
 from .models import usuario, clase
@@ -20,14 +21,14 @@ def index(request):
     elif request.method == "POST":
         if request.POST['boton'] == 'iniciar':
             users = todos_usuarios()
-            print(users)
             user = request.POST['user']
             pwd = request.POST['pwd']
             if user in users:
                 u = usuario.objects.get(user=user)
-                print(u.pwd)
                 if u.pwd == pwd:
-                    return redirect('/dash')
+                    response = redirect('/dash')
+                    response.set_cookie("cookie", user)
+                    return response
                 else:
                     msg = 'Contraseña incorrecta'
                     context = {'msg': msg}
@@ -59,18 +60,35 @@ def index(request):
                 teacher = True
             if 'admin' in rol:
                 admin=True
+            response = redirect('/dash')
+            response.set_cookie("cookie", user)
             user = usuario.objects.create(user=user,pwd=pwd,nombre=nombre,edad=edad,pais=pais,sexo=sexo,
                                        so=so, is_student=student, is_teacher=teacher,is_admin=admin)
             user.save()
-            return redirect('/dash')
+            return response
 
+def obtener_clases(user):
+    usuarios = []
+    lista_clases = []
+    clases = clase.objects.all()
+    for cl in clases:
+        lista_usuarios = cl.usuarios.all()
+        for u in lista_usuarios:
+            if u.user == user:
+                lista_clases.append(cl)
+    for cl in lista_clases:
+        usuarios = cl.usuarios.exclude(user=user)
+    return usuarios
 
-
-def datos_edad():
+def datos_edad(datos):
     edad = []
-    cantidad =[]
+    cantidad = []
     dat = []
-    usuarios = usuario.objects.all()
+    usuarios = []
+    if datos.is_admin:
+        usuarios = usuario.objects.all()
+    if datos.is_teacher:
+        usuarios = obtener_clases(datos.user)
     for user in usuarios:
         edad.append(user.edad)
     for i in edad:
@@ -79,12 +97,14 @@ def datos_edad():
     for i in dat:
         n = edad.count(i)
         cantidad.append(n)
-    print(dat)
-    print(cantidad)
     return dat, cantidad
 
-def datos_genero():
-    usuarios = usuario.objects.all()
+def datos_genero(datos):
+    usuarios = []
+    if datos.is_admin:
+        usuarios = usuario.objects.all()
+    if datos.is_teacher:
+        usuarios = obtener_clases(datos.user)
     fem = 0
     masc = 0
     for user in usuarios:
@@ -94,8 +114,12 @@ def datos_genero():
             masc += 1
     return [fem, masc]
 
-def datos_ssoo():
-    usuarios = usuario.objects.all()
+def datos_ssoo(datos):
+    usuarios = []
+    if datos.is_admin:
+        usuarios = usuario.objects.all()
+    if datos.is_teacher:
+        usuarios = obtener_clases(datos.user)
     l = 0
     m = 0
     w = 0
@@ -111,8 +135,12 @@ def datos_ssoo():
             otro += 1
     return [l, m, w, otro]
 
-def datos_pais():
-    usuarios = usuario.objects.all()
+def datos_pais(datos):
+    usuarios = []
+    if datos.is_admin:
+        usuarios = usuario.objects.all()
+    if datos.is_teacher:
+        usuarios = obtener_clases(datos.user)
     loc = Nominatim(user_agent="GetLoc")
     latitudes = []
     longitudes = []
@@ -123,23 +151,27 @@ def datos_pais():
     return latitudes, longitudes
 
 def dash(request):
+    user = request.COOKIES.get('cookie')
+    print(user)
+    datos_usuario = usuario.objects.get(user=user)
+
     #DASHBOARD DE LA EDADES
-    dat, cantidad = datos_edad()
+    dat, cantidad = datos_edad(datos_usuario)
     fig = go.Scatter(x=dat, y=cantidad, mode='markers', line=dict(color='red'))
     layout = dict(title='EDAD')
     f = go.Figure(data=[fig], layout=layout)
     plot_div = plot(f, output_type='div', include_plotlyjs=False)
 
     #DASHBOARD DE LOS GENEROS
-    dat_gen = datos_genero()
+    dat_gen = datos_genero(datos_usuario)
     valores = ["Femenino", "Masculino"]
     fig1 = go.Bar(x=valores,y=dat_gen, width=0.5)
-    layout = dict(title='GÉNERO')
+    layout = dict(title='GENERO')
     f1 = go.Figure(data=[fig1], layout=layout)
     plot_div1 = plot(f1, output_type='div', include_plotlyjs=False)
 
     #DASHBOARD DEL SSOO
-    dat = datos_ssoo()
+    dat = datos_ssoo(datos_usuario)
     val = ["Linux", "Mac", "Windows", "Otro"]
     fig2 = go.Pie(labels=val,values=dat)
     layout = dict(title='SISTEMA OPERATIVO')
@@ -147,18 +179,27 @@ def dash(request):
     plot_div2 = plot(f2, output_type='div', include_plotlyjs=False)
 
     #DASBOARD DE PAISES
-    latitudes, longitudes = datos_pais()
+    latitudes, longitudes = datos_pais(datos_usuario)
     fig3 = go.Scattergeo(lon=longitudes, lat=latitudes)
     layout = dict(title='PAISES')
     f3 = go.Figure(data=[fig3], layout=layout)
     plot_div3 = plot(f3, output_type='div', include_plotlyjs=False)
 
-
     context = {
-        'plot': plot_div,
-        'plot1': plot_div1,
-        'plot2': plot_div2,
-        'plot3': plot_div3
+        'nombre': datos_usuario.nombre
     }
+    if datos_usuario.is_student:
+        context['msg']= 'Eres estudiante no puedes visualizar gráficas'
+    if datos_usuario.is_teacher:
+        context['plot']= plot_div
+        context['plot1']= plot_div1
+        context['plot2']= plot_div2
+        context['plot3']= plot_div3
+    if datos_usuario.is_admin:
+        context['plot'] = plot_div
+        context['plot1'] = plot_div1
+        context['plot2'] = plot_div2
+        context['plot3'] = plot_div3
+
     return render(request, 'prueba.html',context)
 
