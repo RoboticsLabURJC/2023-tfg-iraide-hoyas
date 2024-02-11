@@ -5,11 +5,11 @@
     <title>Iniciar</title>
 </head>
 <body>
-    <h2>Formulario de inicio de sesión</h2>
-    <h5>Si ya está registrado ingrese aquí</h5>
     {% if msg %}
         <p style="color: red">{{ msg }}</p>
     {% endif %}
+    <h2>Formulario de inicio de sesión</h2>
+    <h5>Si ya está registrado ingrese aquí</h5>
     <form method="POST" action="/">
         {% csrf_token %}
         Usuario<input type="text" name="user"><br>

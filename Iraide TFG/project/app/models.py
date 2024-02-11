@@ -17,3 +17,14 @@ class clase(models.Model):
     nombre = models.CharField(max_length=20)
     usuarios = models.ManyToManyField(usuario)
 
+class ejercicio(models.Model):
+    id_ejercicio = models.CharField(max_length=20, unique=True)
+    nombre = models.CharField(max_length=20)
+    descripcion = models.CharField(max_length=200)
+
+class actividad(models.Model):
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_fin = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(usuario, on_delete=models.CASCADE)
+
+
