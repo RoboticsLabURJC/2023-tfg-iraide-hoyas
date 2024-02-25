@@ -23,8 +23,9 @@ class ejercicio(models.Model):
     descripcion = models.CharField(max_length=200)
 
 class actividad(models.Model):
-    fecha_inicio = models.DateTimeField(auto_now_add=True)
-    fecha_fin = models.DateTimeField(auto_now_add=True)
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
     usuario = models.ForeignKey(usuario, on_delete=models.CASCADE)
+    evento = models.CharField(max_length=20)
 
 
