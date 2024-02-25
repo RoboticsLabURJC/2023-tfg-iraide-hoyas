@@ -1,9 +1,10 @@
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render,redirect
 from plotly.offline import plot
-from .models import usuario, clase
+from .models import usuario, clase, ejercicio, actividad
 import plotly.graph_objects as go
 from geopy.geocoders import Nominatim
+from datetime import datetime
 import plotly.express as px
 import psycopg2
 
@@ -150,10 +151,46 @@ def datos_pais(datos):
         longitudes.append(localizacion.longitude)
     return latitudes, longitudes
 
+def datos_actividad(user, datos_usuario, context):
+    usuarios_clase =[]
+    if datos_usuario.is_teacher:
+        usuarios_clase = obtener_clases(user)
+    if datos_usuario.is_admin:
+        usuarios_clase = usuario.objects.all()
+    if datos_usuario.is_student:
+        usuarios_clase = usuario.objects.filter(user=user)
+    graficas_act = []
+    for u in usuarios_clase:
+        act = actividad.objects.filter(usuario=u)
+        lista_fecha = []
+        lista_duracion = []
+        lista_evento = []
+        for a in act:
+            fecha_inicio = a.fecha_inicio
+            fecha_fin = a.fecha_fin
+            evento = a.evento
+            if evento=='0':
+                ev = "Ingresa en la plataforma"
+            else:
+                ev = "Ejercicio "+evento
+            fecha = fecha_inicio.strftime("%d/%m/%Y")
+            duracion = str(fecha_fin - fecha_inicio)
+            duracion = duracion.split(":")
+            duracion = duracion[0]+"."+duracion[1]
+            lista_fecha.append(fecha)
+            lista_duracion.append(float(duracion))
+            lista_evento.append(ev)
+        fig = go.Scatter(x=lista_fecha, y=lista_duracion, line=dict(color='orange'),text=lista_evento,)
+        layout = dict(title='Actividad ' + str(u.nombre),xaxis_title="Fecha",yaxis_title="Horas por dia")
+        f = go.Figure(data=[fig], layout=layout)
+        plot_div = plot(f, output_type='div', include_plotlyjs=False)
+        graficas_act.append(plot_div)
+    context['graficas_act'] = graficas_act
+
 def dash(request):
     user = request.COOKIES.get('cookie')
-    print(user)
     datos_usuario = usuario.objects.get(user=user)
+
 
     #DASHBOARD DE LA EDADES
     dat, cantidad = datos_edad(datos_usuario)
@@ -188,8 +225,11 @@ def dash(request):
     context = {
         'nombre': datos_usuario.nombre
     }
+
+    datos_actividad(user,datos_usuario,context)
+
     if datos_usuario.is_student:
-        context['msg']= 'Eres estudiante no puedes visualizar gráficas'
+        context['msg']= 'Eres estudiante solo puedes ver tus datos'
     if datos_usuario.is_teacher:
         context['plot']= plot_div
         context['plot1']= plot_div1
